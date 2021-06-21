@@ -1,6 +1,8 @@
+import time
+
 debugMode = false
 
-def CFRAC(N):
+def CFRAC(N, showProgress = False):
   # Шаг 1...
   FBandUB = getFBandUB(N)
   fb = FBandUB[0]
@@ -11,7 +13,6 @@ def CFRAC(N):
     print(fBase)
 
   k = getK(N, fBase)
-  print("k =", k)
 
   kN = k*N
   fBase = getFBase(kN, fb)
@@ -27,10 +28,12 @@ def CFRAC(N):
     if debugMode:
       print(numerator, q)
 
-    parFact = product(list(map(lambda x: x[0]^x[1],list(zip(fBase, BFac(q, fBase))))))
+    parFact = product(list(map(lambda x: x[0]^x[1], list(zip(fBase, BFac(q, fBase))))))
     if q == parFact or isLpUB(q//parFact, ub, fBase[-1]):
       ui.append((numerator, q))
-      print(numerical_approx(len(ui)/(fb + 1))*100)
+      progress = numerical_approx(len(ui)/(fb + 1))*100
+      if showProgress:
+        printProgressBar(len(ui), fb + 1, prefix = ' Progress:')
     i += 1
   if debugMode:
     print(ui)
@@ -45,15 +48,14 @@ def CFRAC(N):
 
   factors = set()
   for sol in A.left_kernel().basis():
-    qf = product(list(map(lambda x: x[1][1],list(filter(lambda x: x[0] == 1,list(zip(sol, ui)))))))
-    af = product(list(map(lambda x: x[1][0],list(filter(lambda x: x[0] == 1,list(zip(sol, ui)))))))
+    qf = product(list(map(lambda x: x[1][1], list(filter(lambda x: x[0] == 1, list(zip(sol, ui)))))))
+    af = product(list(map(lambda x: x[1][0], list(filter(lambda x: x[0] == 1, list(zip(sol, ui)))))))
     x = F(af)
     y = F(qf).nth_root(2)
     if x != y and x != F(-y):
       fac = gcd(x-y, kN).lift()
       if (1 < fac and fac < N) and (N%fac == 0):
         factors.add(fac)
-  print(N)
   print("factors = ", factors)
 
 def BFac(N, fBase):
@@ -74,7 +76,6 @@ def BFac(N, fBase):
 
 
 def isLpUB(x, UB, largestPrimeInFB):
-  # print(x)
   if not is_prime_power(x):
     return False
   base = next_prime(largestPrimeInFB)
@@ -114,7 +115,7 @@ def getFBase(N, fb):
 def getFBandUB(N):
   numberOfDigits = len(str(N))
   if numberOfDigits <= 20:
-    return (20, 3000)
+    return (60, 3000)
   if 21 <= numberOfDigits <= 23:
     return (150, 10000)
   if 24 <= numberOfDigits <= 25:
@@ -135,3 +136,54 @@ def getFBandUB(N):
     return (650, 53000)
   if 41 <= numberOfDigits:
     return (1000, 63000)
+
+def runCFRACtests():
+  numbers = [89798901815566097617, #20
+             814549160699567904701, #21
+             8145491579225959753183, #22
+             49166729254556864996653, #23
+             567145958951392379680547, #24
+             4340856958597307344296589, #25
+             45550029959058235964047399, #26
+             132264170437550839716317897, #27
+             1322641709009802963596389843, #28
+             23943529316361761474523364773, #29
+             291163170528478955353327561417, #30
+             9592861349514945348515183836369, #31
+             26998418696705720904591837114989, #32
+             232474835216173169682008181183211, #33
+             1391728916433545665546310683013867, #34
+             15902168834583676234510442528251181, #35
+             2^128 + 1] #39
+
+  resultTimes = []
+  for num in numbers:
+    print("Факторизуем число: {}".format(num))
+    start = time.time()
+    CFRAC(num, showProgress = True)
+    end = time.time()
+    print("Time: ", end - start, "s.")
+    resultTimes.append(end - start)
+  print("Итоговый массив времени: ", resultTimes)
+
+
+# Вспомогательная функция для генерации тестовых чисел
+def generateTestNumbers():
+  a = random_prime(1856707808261)
+  b = random_prime(1856707808261)
+  ab = a*b
+  while len(str(ab)) != 20:
+   a = random_prime(1856707808261)
+   b = random_prime(1856707808261)
+   ab = a*b
+   print(len(str(ab)))
+  print('a = ', a, 'b = ', b)
+  print('a*b = ', ab)
+  print('len a*b = ', len(str(ab)))
+
+# Вывод прогресса в консоль
+def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, printEnd = "\r"):
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    print(f'\r{prefix} {percent}% {suffix}', end = printEnd)
+    if iteration == total:
+        print()
