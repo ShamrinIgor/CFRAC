@@ -3,7 +3,6 @@ import time
 debugMode = false
 
 def CFRAC(N, showProgress = False):
-  # Шаг 1...
   FBandUB = getFBandUB(N)
   fb = FBandUB[0]
   ub = FBandUB[1]
@@ -17,41 +16,40 @@ def CFRAC(N, showProgress = False):
   kN = k*N
   fBase = getFBase(kN, fb)
 
-  # Шаг 2...
   cf = continued_fraction(sqrt(kN))
   ui = []
   i = 0
   F = IntegerModRing(kN)
-  while len(ui) < fb + 2:
+  while len(ui) < fb + 1:
     numerator = F(cf.numerator(i)).lift()
-    q = F((-1)^(i+1)*numerator^2).lift()*(-1)^(i+1)
+    p = F((-1)^(i+1)*numerator^2).lift()*(-1)^(i+1)
     if debugMode:
-      print(numerator, q)
+      print(numerator, p)
 
-    parFact = product(list(map(lambda x: x[0]^x[1], list(zip(fBase, BFac(q, fBase))))))
-    if q == parFact or isLpUB(q//parFact, ub, fBase[-1]):
-      ui.append((numerator, q))
-      progress = numerical_approx(len(ui)/(fb + 1))*100
+    parFact = product(list(map(lambda x: x[0]^x[1], list(zip(fBase, BFac(p, fBase))))))
+    if p == parFact or isLpUB(p//parFact, ub, fBase[-1]):
+      ui.append((numerator, p))
+      progress = numerical_approx(len(ui)/(fb + 2))*100
       if showProgress:
-        printProgressBar(len(ui), fb + 1, prefix = ' Progress:')
+        printProgressBar(len(ui), fb + 2, prefix = ' Progress:')
     i += 1
   if debugMode:
     print(ui)
 
-  # Шаг 3...
+
   powers = list(map(lambda x: BFac(x[1], fBase), ui))
   gf2 = IntegerModRing(2)
-  A = matrix(gf2, powers)
+  E = matrix(gf2, powers)
   if debugMode:
-    print(A)
+    print(E)
   solIndex = 0
 
   factors = set()
-  for sol in A.left_kernel().basis():
-    qf = product(list(map(lambda x: x[1][1], list(filter(lambda x: x[0] == 1, list(zip(sol, ui)))))))
+  for sol in E.left_kernel().basis():
+    pf = product(list(map(lambda x: x[1][1], list(filter(lambda x: x[0] == 1, list(zip(sol, ui)))))))
     af = product(list(map(lambda x: x[1][0], list(filter(lambda x: x[0] == 1, list(zip(sol, ui)))))))
     x = F(af)
-    y = F(qf).nth_root(2)
+    y = F(pf).nth_root(2)
     if x != y and x != F(-y):
       fac = gcd(x-y, kN).lift()
       if (1 < fac and fac < N) and (N%fac == 0):
